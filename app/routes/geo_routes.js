@@ -11,10 +11,11 @@ module.exports = function(app, data) {
     
     });
 
-    app.get('/notify/:user',(req,res)=>{
-        const user = req.params.user;
+    app.get('/notify/:organizer/:attendee',(req,res)=>{
+        const organizer = req.params.organizer;
+        const attendee =  req.params.attendee;
         const token=process.env.TOKEN;
-        request.post('https://slack.com/api/chat.postMessage').form({'token':token,'channel':'@'+user,'text':user+' is Arriving Now!'})
+        request.post('https://slack.com/api/chat.postMessage').form({'token':token,'channel':'@'+organizer,'text':attendee+' is Arriving Now!'})
         res.sendStatus(200)
     }); 
 
