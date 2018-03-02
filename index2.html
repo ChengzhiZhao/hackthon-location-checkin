@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset='utf-8' />
-    <title>Fooder</title>
+    <title>Meetup Checkin</title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <script src='https://npmcdn.com/@turf/turf@4.0.0/turf.min.js'></script>
     <script src="https://d3js.org/d3.v4.min.js"></script>
@@ -236,7 +236,6 @@
                         <img src='images/logo.png' style='width:60px'>
                     </div>
                     <div class='dragger space-left2'>
-                        <img src='https://www.mapbox.com/bites/00359/icons/bubble-pizza.svg'>
                         <img src = 'images/logo.png' id='cursor'>
                     </div>
                 </div>
@@ -270,15 +269,21 @@
 <div style="float:bottom; height: 50%; border-top:1px solid #000; border-left:2px solid #000; border-bottom:2px solid #000; border-right:2px solid #000">
     <div style="height: 33%; background-color:#FDE74C">
         <p>Member A View: </p>
-        <button id="b1" style="display: none" onclick="memberContinue(1)">Check In</button><br>
+        <button id="b1" style="display: none" onclick="memberContinue(1)">Check In</button>
+        <p id="c1" style="display: none">Member A Checked In</p>
+        <br>
     </div>
     <div style="height: 33%; background-color:#9BC53D">
         <p>Member B View: </p>
-        <button id="b2" style="display: none" onclick="memberContinue(2)">Check In</button><br>
+        <button id="b2" style="display: none" onclick="memberContinue(2)">Check In</button>
+        <p id="c2" style="display: none">Member B Checked In</p>
+        <br>
     </div>
     <div style="height: 33%; background-color:#E55934">
         <p>Member C View: </p>
-        <button id="b3" style="display: none" onclick="memberContinue(3)">Check In</button><br>
+        <button id="b3" style="display: none" onclick="memberContinue(3)">Check In</button>
+        <p id="c3" style="display: none">Member C Checked In</p>
+        <br>
     </div>
 </div>
 </div>
@@ -437,7 +442,7 @@ var state = {
 
         // add transient marker to cursor
         var marker = document.createElement('div');
-        marker.innerHTML = '<img src="https://www.mapbox.com/bites/00359/icons/bubble-'+ft.properties.type+'.svg">'
+        marker.innerHTML = '<img src="/images/logo.png">'
         marker.classList = 'transient';
         state.transientMarker = new mapboxgl.Marker(marker)
         .setLngLat(ft.geometry.coordinates)
@@ -625,7 +630,7 @@ var state2 = {
 
         // add transient marker to cursor
         var marker = document.createElement('div');
-        marker.innerHTML = '<img src="https://www.mapbox.com/bites/00359/icons/bubble-'+ft.properties.type+'.svg">'
+        marker.innerHTML = '<img src="/images/logo.png">'
         marker.classList = 'transient';
         state2.transientMarker = new mapboxgl.Marker(marker)
         .setLngLat(ft.geometry.coordinates)
@@ -813,7 +818,7 @@ var state3 = {
 
         // add transient marker to cursor
         var marker = document.createElement('div');
-        marker.innerHTML = '<img src="https://www.mapbox.com/bites/00359/icons/bubble-'+ft.properties.type+'.svg">'
+        marker.innerHTML = '<img src="/images/logo.png">'
         marker.classList = 'transient';
         state3.transientMarker = new mapboxgl.Marker(marker)
         .setLngLat(ft.geometry.coordinates)
@@ -883,7 +888,7 @@ var rests = [
     {'type': 'pizza',
     'icon': '', 
     'coordinates': [
-            -73.985721,40.725980
+            -73.962721,40.749999
         ]
     }
     // ,
@@ -906,6 +911,7 @@ var nothing = turf.featureCollection([]);
 var restaurants = turf.featureCollection(rests.map(function(rest){
     return turf.point(rest.coordinates, rest)
 }))
+
 var pickups = turf.featureCollection([])
 
 driver.on('load', function(){
@@ -1041,8 +1047,8 @@ map.on('load', function(){
         'data': nothing,
         'type': 'geojson'
     })
-    this
 
+    this
     .addLayer({
         'id':'routearrows',
         'type':'symbol',
@@ -1228,9 +1234,9 @@ map.on('load', function(){
             'type': 'geojson'
         },
         'layout':{
-            'icon-image':'{type}',
+            'icon-image':'marker-15',
             'text-font':['icomoon Regular'],
-            'icon-size':0.125
+            'icon-size':1.5
         },
         'paint':{
             'text-color': '#3887be'
@@ -1247,7 +1253,8 @@ map.on('load', function(){
         'layout':{
             'icon-allow-overlap': true,
             'icon-ignore-placement': true,
-            'icon-image':'bubble-{type}',
+            'icon-image':'marker-15',
+            'icon-size':1.5
             //'text-field': '{index}'
         },
         'paint':{
@@ -1805,6 +1812,10 @@ function memberContinue(num) {
             state.checkin = true;
             state.checkindiff = Date.now() - state.checkintime;
             tick();
+            var button = document.getElementById("b1");
+            button.style.display = "none";
+            var checkinm = document.getElementById("c1");
+            checkinm.style.display = "inline";
             break;
         }
         case 2: {
@@ -1812,6 +1823,10 @@ function memberContinue(num) {
             state2.checkin = true;
             state2.checkindiff = Date.now() - state2.checkintime;
             tick2();
+            var button = document.getElementById("b2");
+            button.style.display = "none";
+            var checkinm = document.getElementById("c2");
+            checkinm.style.display = "inline";
             break;
         }
         case 3: {
@@ -1819,6 +1834,10 @@ function memberContinue(num) {
             state3.checkin = true;
             state3.checkindiff = Date.now() - state3.checkintime;
             tick3();
+            var button = document.getElementById("b3");
+            button.style.display = "none";
+            var checkinm = document.getElementById("c3");
+            checkinm.style.display = "inline";
             break;
         }
     }    
