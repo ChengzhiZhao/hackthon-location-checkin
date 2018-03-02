@@ -252,18 +252,19 @@
 <div style="float:top; height: 50%; border-top:2px solid #000; border-left:2px solid #000; border-bottom:1px solid #000; border-right:2px solid #000; background-color:#5BC0EB">
     <div style="height: 25%; color: white">
         <p>Organizer View: </p>
+        <input id="organizer" type="text" placeholder="Please type organizer Slack id:" style="width: 60%;"><br> 
     </div>
     <div style="height: 25%; color: white">
         <span style="width: 50%">Member A</span>&nbsp&nbsp
-        <span id="m1" style="width: 50%"></span><br><br>
+        <span id="m1" style="width: 50%"></span><span style="width: 70%; float: right"> meters</span><br><br>
     </div>
     <div style="height: 25%; color: white">
         <span style="width: 50%">Member B</span>&nbsp&nbsp
-        <span id="m2" style="width: 50%"></span><br><br>
+        <span id="m2" style="width: 50%"></span><span style="width: 70%; float: right"> meters</span><br><br>
     </div>
     <div style="height: 25%; color: white">
         <span style="width: 50%">Member C</span>&nbsp&nbsp
-        <span id="m3" style="width: 50%"></span><br><br>
+        <span id="m3" style="width: 50%"></span><span style="width: 70%; float: right"> meters</span><br><br>
     </div>
 </div>
 <div style="float:bottom; height: 50%; border-top:1px solid #000; border-left:2px solid #000; border-bottom:2px solid #000; border-right:2px solid #000">
@@ -854,7 +855,7 @@ var state3 = {
     }
 }
 
-mapboxgl.accessToken = 'pk.eyJ1IjoicGV0ZXJxbGl1IiwiYSI6ImpvZmV0UEEifQ._D4bRmVcGfJvo1wjuOpA1g';
+mapboxgl.accessToken = '';
 var embed = window.location.href.indexOf('embed=true') !==-1;
 
 var map = new mapboxgl.Map({
@@ -1672,7 +1673,7 @@ function moveTruck(state, i){
     }
 
     var fieldNameElement = document.getElementById("m"+i);
-    fieldNameElement.innerHTML = state.distanceLeft;
+    fieldNameElement.innerHTML = Math.round(state.distanceLeft * 100)/100;
 
     state.truckLocation = newSpot;
     state.truckMarker
@@ -1805,6 +1806,15 @@ function objectToArray(obj){
     return payload
 }
 
+function sendNotification(memberId){
+    var xmlhttp = new XMLHttpRequest(); 
+    var organizerName = document.getElementById("organizer").value;
+    var requestURL = "http://localhost:8000/notify/" + organizerName + "/" + memberId;
+    console.log(requestURL);
+    xmlhttp.open("GET", requestURL);
+    var result = xmlhttp.send();
+}
+
 function memberContinue(num) {
     switch(num){
         case 1: {
@@ -1816,6 +1826,7 @@ function memberContinue(num) {
             button.style.display = "none";
             var checkinm = document.getElementById("c1");
             checkinm.style.display = "inline";
+            sendNotification("Member A");
             break;
         }
         case 2: {
@@ -1827,6 +1838,7 @@ function memberContinue(num) {
             button.style.display = "none";
             var checkinm = document.getElementById("c2");
             checkinm.style.display = "inline";
+            sendNotification("Member B");
             break;
         }
         case 3: {
@@ -1838,6 +1850,7 @@ function memberContinue(num) {
             button.style.display = "none";
             var checkinm = document.getElementById("c3");
             checkinm.style.display = "inline";
+            sendNotification("Member C");
             break;
         }
     }    
