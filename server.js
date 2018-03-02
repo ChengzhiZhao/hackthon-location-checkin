@@ -6,7 +6,10 @@ const path           = require("path");
 
 const port = 8000;
 app.use(bodyParser.json());
-
+app.use(
+    "/",
+    express.static(__dirname)
+);
 require('./app/routes')(app, {});
 app.get('/',function(req,res){
     res.sendFile(path.join(__dirname+'/index2.html'));
