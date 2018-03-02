@@ -1,5 +1,5 @@
 const geoCalculator=require('./calculate_distance.js')
-
+const request=require('request')
 
 module.exports = function(app, data) {
     app.post('/geo', (req, res) => {       
@@ -10,5 +10,12 @@ module.exports = function(app, data) {
         res.send(JSON.stringify({ distance: dis }));
     
     });
+
+    app.get('/notify/:user',(req,res)=>{
+        const user = req.params.user;
+        const token=process.env.TOKEN;
+        request.post('https://slack.com/api/chat.postMessage').form({'token':token,'channel':'@'+user,'text':user+' is Arriving Now!'})
+        res.sendStatus(200)
+    }); 
 
 };
