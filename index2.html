@@ -30,7 +30,23 @@
             height:20px;
             border:2px solid #fff;
             border-radius:50%;
-            background:#3887be;
+            background:#FDE74C;
+            pointer-events: none;
+        }
+        .truck2, .ping {
+            width:20px;
+            height:20px;
+            border:2px solid #fff;
+            border-radius:50%;
+            background:#9BC53D;
+            pointer-events: none;
+        }
+        .truck3, .ping {
+            width:20px;
+            height:20px;
+            border:2px solid #fff;
+            border-radius:50%;
+            background:#E55934;
             pointer-events: none;
         }
 
@@ -209,7 +225,7 @@
         </div>
     </div>
 
-<div id='map' class='contain'>
+<div id='map' class='contain' style="margin-right: 35%">
     <div id='modal-content' class='animate modal modal-content active' style='background:rgba(0,0,0,0.75)'>
             <div class='col5 modal-body fill-white contain pad4' style='margin-top:15%'>
                 <div class=' row3 clearfix'>
@@ -217,11 +233,11 @@
                         Click and drag from any restaurant to add a new order for delivery
                     </div>
                     <div style='border-radius:30px; border:2px solid #aaa; display:inline-block' class='drag  space-top2' >
-                        <img src='https://www.mapbox.com/bites/00359/icons/pngs/pizza.png' style='width:60px'>
+                        <img src='images/logo.png' style='width:60px'>
                     </div>
                     <div class='dragger space-left2'>
                         <img src='https://www.mapbox.com/bites/00359/icons/bubble-pizza.svg'>
-                        <img src = 'https://www.mapbox.com/bites/00359/icons/cursor.png' id='cursor'>
+                        <img src = 'images/logo.png' id='cursor'>
                     </div>
                 </div>
                 <div class=''>
@@ -232,13 +248,54 @@
             </div>
     </div>
 </div>
+
+<div style="position: fixed; float:right; top: 0; bottom: 0; right: 0; height: 100%; width: 34.8%">
+<div style="float:top; height: 50%; border-top:2px solid #000; border-left:2px solid #000; border-bottom:1px solid #000; border-right:2px solid #000; background-color:#5BC0EB">
+    <div style="height: 25%; color: white">
+        <p>Organizer View: </p>
+    </div>
+    <div style="height: 25%; color: white">
+        <span style="width: 50%">Member A</span>&nbsp&nbsp
+        <span id="m1" style="width: 50%"></span><br><br>
+    </div>
+    <div style="height: 25%; color: white">
+        <span style="width: 50%">Member B</span>&nbsp&nbsp
+        <span id="m2" style="width: 50%"></span><br><br>
+    </div>
+    <div style="height: 25%; color: white">
+        <span style="width: 50%">Member C</span>&nbsp&nbsp
+        <span id="m3" style="width: 50%"></span><br><br>
+    </div>
+</div>
+<div style="float:bottom; height: 50%; border-top:1px solid #000; border-left:2px solid #000; border-bottom:2px solid #000; border-right:2px solid #000">
+    <div style="height: 33%; background-color:#FDE74C">
+        <p>Member A View: </p>
+        <button id="b1" style="display: none" onclick="memberContinue(1)">Check In</button><br>
+    </div>
+    <div style="height: 33%; background-color:#9BC53D">
+        <p>Member B View: </p>
+        <button id="b2" style="display: none" onclick="memberContinue(2)">Check In</button><br>
+    </div>
+    <div style="height: 33%; background-color:#E55934">
+        <p>Member C View: </p>
+        <button id="b3" style="display: none" onclick="memberContinue(3)">Check In</button><br>
+    </div>
+</div>
+</div>
+
 <script>
+
 var state = {
+    checkin: false,
+    checkintime: 0,
+    checkindiff: 0,
+    destination: {},
+    distanceLeft: 999999,
     loaded:{},
     speedFactor: 30,
     pause: true,
     lastQueryTime: 0,
-    truckLocation:[-73.995721, 40.725980],
+    truckLocation:[-73.995721, 40.745980],
     lastAtRestaurant:{
         taco: 0,
         pizza: 0,
@@ -303,8 +360,8 @@ var state = {
             .append('div')
             .classed('step', true)
             .text(function(d){
-                if (d[1]) return 'Deliver '+ d[1]
-                else return 'Pick up '+ d[0] + ' order'
+                if (d[1]) return 'Going to Meetup '
+                else return 'Pick up '+ d[0] + ''
             })
             .append('div')
             .classed('foodicon', true)
@@ -315,7 +372,7 @@ var state = {
             .append('img')
             .attr('src', function(d){
                 var type = d[1] ? d[1] : d[0]
-                return 'https://www.mapbox.com/bites/00359/icons/pngs/'+type+'.png'
+                return 'images/logo.png'
             })
     },
 
@@ -415,7 +472,384 @@ var state = {
         state.transientMarker.remove();
     }
 }
-mapboxgl.accessToken = '';
+
+var state2 = {
+    checkin: false,
+    checkintime: 0,
+    checkindiff: 0,
+    destination: {},
+    distanceLeft: 999999,
+    loaded:{},
+    speedFactor: 30,
+    pause: true,
+    lastQueryTime: 0,
+    truckLocation:[-73.981721, 40.715980],
+    lastAtRestaurant:{
+        taco: 0,
+        pizza: 0,
+        noodles: 0
+    },
+    keepTrack:[],
+    currentSchedule: [],
+    currentRoute: null,
+    pointHopper: {},
+    dragLine: [],
+    ruler: cheapRuler(41.8949, 'meters'),
+
+    //update map line geometry
+    updateRoute: function(wholeRoute){
+        var payload;
+
+        //state2.updateNext();
+        if (!wholeRoute) payload = nothing;
+
+        else{
+            var currentChunk = turf.lineSlice(
+                turf.point(state2.truckLocation),
+                state2.currentSchedule[0],
+                wholeRoute.geometry
+            )
+
+            var restOfLine = turf.lineSlice(
+                state2.currentSchedule[0],
+                state2.currentSchedule[state2.currentSchedule.length-1],            
+                wholeRoute.geometry
+            );
+
+            restOfLine.properties.current = 'false';
+            currentChunk.properties.current = 'true';
+
+            payload = turf.featureCollection([restOfLine,currentChunk])
+        }
+
+        [map, driver]
+        .forEach(function(mapObject){
+            mapObject
+                .getSource('route')
+                .setData(payload)
+        })
+    },
+    //update queue display on phone
+    updateQueue: function(){
+
+        var queue = state2.currentSchedule
+            .map(function(item){
+                return [item.properties.key, item.properties.type]
+            })
+
+
+        d3.selectAll('.step')
+            .remove();
+
+        d3.select('#queue')
+            .selectAll('.step')
+            .data(queue, function(d){return d})
+            .enter()
+            .append('div')
+            .classed('step', true)
+            .text(function(d){
+                if (d[1]) return 'Going to Meetup '
+                else return 'Going to Meetup '
+            })
+            .append('div')
+            .classed('foodicon', true)
+            .text(function(d){
+                var arrow = d[1] ? '▼' : '▲'
+                return arrow
+            })
+            .append('img')
+            .attr('src', function(d){
+                var type = d[1] ? d[1] : d[0]
+                return 'images/logo.png'
+            })
+    },
+
+    updatePickups: function(geojson){
+        [map, driver]
+        .forEach(function(mapObject){
+            mapObject
+                .getSource('pickups-symbol')
+                .setData(geojson)
+        })    
+    },
+    // update next marker
+    updateNext: function(){
+        var nextStop = state2.currentSchedule[0] ? state2.currentSchedule[0] : nothing;
+
+        if (nextStop.properties && nextStop.properties.restaurant){
+            console.log('rest')
+            restaurants.features.forEach(function(ft){
+                ft.properties.next = ft.properties.type === nextStop.properties.key
+                console.log(ft.properties.next)
+            })
+
+            map.getSource('restaurants')
+                .setData(restaurants)
+        }
+
+    },
+    reset: function(){
+        console.log('resetting')
+        state2.pause = true;
+        state2.currentSchedule = state2.keepTrack = [];
+        state2.pointHopper = {};
+
+        rests.forEach(function(rest){
+            state2.pointHopper[rest.type] = turf.point(rest.coordinates, {key:rest.type})
+        })
+
+        //update the queue and route
+        state2.updateQueue();
+
+        if (state2.loaded.map && state2.loaded.driver){
+
+            map.getSource('next')
+                .setData(nothing);
+
+            state2.updatePickups(nothing);
+
+            state2.updateRoute();
+
+        }
+    },
+    onMousedown: function(e){
+
+        if (state2.currentSchedule.length>=11) return
+        var ft = map.queryRenderedFeatures(e.point, {layers:['restaurants']})[0]
+
+        if (!ft) return;
+        
+        //hide phone
+        d3.select('#phone')
+            .classed('hide', true)
+
+        // add transient marker to cursor
+        var marker = document.createElement('div');
+        marker.innerHTML = '<img src="https://www.mapbox.com/bites/00359/icons/bubble-'+ft.properties.type+'.svg">'
+        marker.classList = 'transient';
+        state2.transientMarker = new mapboxgl.Marker(marker)
+        .setLngLat(ft.geometry.coordinates)
+        .addTo(map);
+
+        //set drag guides
+        map.getSource('dragHighlight')
+            .setData(ft)
+
+        state2.dragLine[0] = ft.geometry.coordinates;
+        map.setClasses(['dragging']);
+
+        state2.pause = true;
+        state2.updateRoute();
+        d3.select('.ping')
+            .classed('active', false);
+
+        map.once('mouseup', function(e){
+            state2.onMouseup(e, ft)
+        })
+    },
+    onMouseup: function(e, ft){
+        d3.select('#phone')
+            .classed('hide', false);
+        map.setClasses([])
+            .getSource('dragLine')
+            .setData(nothing)
+
+        d3.select('canvas')
+            .style('cursor', null);
+        state2.newPickup(map.unproject(e.point), ft.properties.type);
+        state2.transientMarker.remove();
+    }
+}
+
+var state3 = {
+    checkin: false,
+    checkintime: 0,
+    checkindiff: 0,
+    destination: {},
+    distanceLeft: 999999,
+    loaded:{},
+    speedFactor: 30,
+    pause: true,
+    lastQueryTime: 0,
+    truckLocation:[-74.005721, 40.715980],
+    lastAtRestaurant:{
+        taco: 0,
+        pizza: 0,
+        noodles: 0
+    },
+    keepTrack:[],
+    currentSchedule: [],
+    currentRoute: null,
+    pointHopper: {},
+    dragLine: [],
+    ruler: cheapRuler(41.8949, 'meters'),
+
+    //update map line geometry
+    updateRoute: function(wholeRoute){
+        var payload;
+
+        //state3.updateNext();
+        if (!wholeRoute) payload = nothing;
+
+        else{
+            var currentChunk = turf.lineSlice(
+                turf.point(state3.truckLocation),
+                state3.currentSchedule[0],
+                wholeRoute.geometry
+            )
+
+            var restOfLine = turf.lineSlice(
+                state3.currentSchedule[0],
+                state3.currentSchedule[state3.currentSchedule.length-1],            
+                wholeRoute.geometry
+            );
+
+            restOfLine.properties.current = 'false';
+            currentChunk.properties.current = 'true';
+
+            payload = turf.featureCollection([restOfLine,currentChunk])
+        }
+
+        [map, driver]
+        .forEach(function(mapObject){
+            mapObject
+                .getSource('route')
+                .setData(payload)
+        })
+    },
+    //update queue display on phone
+    updateQueue: function(){
+
+        var queue = state3.currentSchedule
+            .map(function(item){
+                return [item.properties.key, item.properties.type]
+            })
+
+
+        d3.selectAll('.step')
+            .remove();
+
+        d3.select('#queue')
+            .selectAll('.step')
+            .data(queue, function(d){return d})
+            .enter()
+            .append('div')
+            .classed('step', true)
+            .text(function(d){
+                if (d[1]) return 'Going to Meetup '
+                else return 'Going to Meetup '
+            })
+            .append('div')
+            .classed('foodicon', true)
+            .text(function(d){
+                var arrow = d[1] ? '▼' : '▲'
+                return arrow
+            })
+            .append('img')
+            .attr('src', function(d){
+                var type = d[1] ? d[1] : d[0]
+                return 'images/logo.png'
+            })
+    },
+
+    updatePickups: function(geojson){
+        [map, driver]
+        .forEach(function(mapObject){
+            mapObject
+                .getSource('pickups-symbol')
+                .setData(geojson)
+        })    
+    },
+    // update next marker
+    updateNext: function(){
+        var nextStop = state3.currentSchedule[0] ? state3.currentSchedule[0] : nothing;
+
+        if (nextStop.properties && nextStop.properties.restaurant){
+            console.log('rest')
+            restaurants.features.forEach(function(ft){
+                ft.properties.next = ft.properties.type === nextStop.properties.key
+                console.log(ft.properties.next)
+            })
+
+            map.getSource('restaurants')
+                .setData(restaurants)
+        }
+
+    },
+    reset: function(){
+        console.log('resetting')
+        state3.pause = true;
+        state3.currentSchedule = state3.keepTrack = [];
+        state3.pointHopper = {};
+
+        rests.forEach(function(rest){
+            state3.pointHopper[rest.type] = turf.point(rest.coordinates, {key:rest.type})
+        })
+
+        //update the queue and route
+        state3.updateQueue();
+
+        if (state3.loaded.map && state3.loaded.driver){
+
+            map.getSource('next')
+                .setData(nothing);
+
+            state3.updatePickups(nothing);
+
+            state3.updateRoute();
+
+        }
+    },
+    onMousedown: function(e){
+
+        if (state3.currentSchedule.length>=11) return
+        var ft = map.queryRenderedFeatures(e.point, {layers:['restaurants']})[0]
+
+        if (!ft) return;
+        
+        //hide phone
+        d3.select('#phone')
+            .classed('hide', true)
+
+        // add transient marker to cursor
+        var marker = document.createElement('div');
+        marker.innerHTML = '<img src="https://www.mapbox.com/bites/00359/icons/bubble-'+ft.properties.type+'.svg">'
+        marker.classList = 'transient';
+        state3.transientMarker = new mapboxgl.Marker(marker)
+        .setLngLat(ft.geometry.coordinates)
+        .addTo(map);
+
+        //set drag guides
+        map.getSource('dragHighlight')
+            .setData(ft)
+
+        state3.dragLine[0] = ft.geometry.coordinates;
+        map.setClasses(['dragging']);
+
+        state3.pause = true;
+        state3.updateRoute();
+        d3.select('.ping')
+            .classed('active', false);
+
+        map.once('mouseup', function(e){
+            state3.onMouseup(e, ft)
+        })
+    },
+    onMouseup: function(e, ft){
+        d3.select('#phone')
+            .classed('hide', false);
+        map.setClasses([])
+            .getSource('dragLine')
+            .setData(nothing)
+
+        d3.select('canvas')
+            .style('cursor', null);
+        state3.newPickup(map.unproject(e.point), ft.properties.type);
+        state3.transientMarker.remove();
+    }
+}
+
+mapboxgl.accessToken = 'pk.eyJ1IjoicGV0ZXJxbGl1IiwiYSI6ImpvZmV0UEEifQ._D4bRmVcGfJvo1wjuOpA1g';
 var embed = window.location.href.indexOf('embed=true') !==-1;
 
 var map = new mapboxgl.Map({
@@ -423,8 +857,8 @@ var map = new mapboxgl.Map({
     scrollZoom: !embed,
     container: 'map', // container id
     style: 'mapbox://styles/peterqliu/cj5k2tj0d16ul2rmlwyw00gth', //stylesheet location
-    center: state.truckLocation, // starting position
-    zoom: 14 // starting zoom
+    center: [-73.995721, 40.725980], // starting position
+    zoom: 13 // starting zoom
 });
 
 if(embed) map.addControl(new mapboxgl.NavigationControl());
@@ -466,6 +900,8 @@ var bbox = [
 ]
 
 state.reset();
+state2.reset();
+state3.reset();
 var nothing = turf.featureCollection([]);
 var restaurants = turf.featureCollection(rests.map(function(rest){
     return turf.point(rest.coordinates, rest)
@@ -595,7 +1031,8 @@ map.on('load', function(){
 
     map.fitBounds(bbox)
     state.loaded.map = true;
-
+    state2.loaded.map = true;
+    state3.loaded.map = true;
     this.addSource('route',{
         'data': nothing,
         'type': 'geojson'
@@ -826,14 +1263,15 @@ map.on('load', function(){
 
     state.truckMarker = new mapboxgl.Marker(marker)
         .setLngLat(state.truckLocation)
-        .addTo(map);
+        .addTo(map); 
 
     state.pingMarker = document.createElement('div');
     state.pingMarker.innerHTML = '<div class="ping"></div>';
 
     state.pingMarker =  new mapboxgl.Marker(state.pingMarker)
         .setLngLat(state.truckLocation)
-        .addTo(map);   
+        .addTo(map); 
+
     map
     .on('mousemove', function(e){
         var ft = map.queryRenderedFeatures(e.point, {layers:['restaurants']})[0]
@@ -853,16 +1291,79 @@ map.on('load', function(){
     .on('mousedown', function(e){
         state.onMousedown(e)
     })
+
+
+    var marker2 = document.createElement('div');
+    marker2.classList = 'truck2';
+
+    state2.truckMarker = new mapboxgl.Marker(marker2)
+        .setLngLat(state2.truckLocation)
+        .addTo(map);    
+
+    state2.pingMarker = document.createElement('div');
+    state2.pingMarker.innerHTML = '<div class="ping"></div>';
+
+    state2.pingMarker =  new mapboxgl.Marker(state2.pingMarker)
+        .setLngLat(state2.truckLocation)
+        .addTo(map); 
+         
+
+    map
+    .on('mousemove', function(e){
+        var ft = map.queryRenderedFeatures(e.point, {layers:['restaurants']})[0]
+        if (ft) map.dragPan.disable();
+        else map.dragPan.enable()   
+
+        if (e.originalEvent.which === 1){
+            var pt = [map.unproject(e.point).lng, map.unproject(e.point).lat];
+            state2.transientMarker
+                .setLngLat(pt);
+
+            state2.dragLine[1] = pt;
+            map.getSource('dragLine')
+            .setData(turf.lineString(state2.dragLine))
+        } 
+    })
+    .on('mousedown', function(e){
+        state2.onMousedown(e)
+    })
+
+
+    var marker3 = document.createElement('div');
+    marker3.classList = 'truck3';
+
+    state3.truckMarker = new mapboxgl.Marker(marker3)
+        .setLngLat(state3.truckLocation)
+        .addTo(map); 
+
+    state3.pingMarker = document.createElement('div');
+    state3.pingMarker.innerHTML = '<div class="ping"></div>';
+
+    state3.pingMarker =  new mapboxgl.Marker(state3.pingMarker)
+        .setLngLat(state3.truckLocation)
+        .addTo(map); 
+
+    map
+    .on('mousemove', function(e){
+        var ft = map.queryRenderedFeatures(e.point, {layers:['restaurants']})[0]
+        if (ft) map.dragPan.disable();
+        else map.dragPan.enable()   
+
+        if (e.originalEvent.which === 1){
+            var pt = [map.unproject(e.point).lng, map.unproject(e.point).lat];
+            state3.transientMarker
+                .setLngLat(pt);
+
+            state3.dragLine[1] = pt;
+            map.getSource('dragLine')
+            .setData(turf.lineString(state3.dragLine))
+        } 
+    })
+    .on('mousedown', function(e){
+        state3.onMousedown(e)
+    })
 })
 
-function randomPoint(){
-
-    var pt = turf.random('points', 1,{bbox:bbox}).features[0].geometry.coordinates
-    var randomNumber = parseFloat((Math.random()*100).toFixed(0))%3;
-    var randomType = rests[randomNumber].type;
-
-    state.newPickup({lng:pt[0], lat:pt[1]}, randomType)
-};
 
 state.newPickup = function (coords, type){
 
@@ -872,6 +1373,7 @@ state.newPickup = function (coords, type){
         .classed('active', false)
     var pt = addPoint(coords, type);
     state.pointHopper[pt.properties.key] = pt;
+    state.destination = coords;
 
     pickups.features.push(pt);
 
@@ -881,9 +1383,9 @@ state.newPickup = function (coords, type){
     d3.select('.ping')
         .classed('active', true)
 
-    console.log(assembleQueryURL());
+    console.log(assembleQueryURL(state));
 
-    d3.json(assembleQueryURL(), function(err, resp){
+    d3.json(assembleQueryURL(state), function(err, resp){
 
         state.currentRoute = resp.trips[0];
         state.pause = false;
@@ -939,6 +1441,157 @@ state.newPickup = function (coords, type){
     })
 }
 
+state2.newPickup = function (coords, type){
+
+    //state.pingMarker._element.classList ='ping mapboxgl-marker';
+
+    d3.select('.ping')
+        .classed('active', false)
+    var pt = addPoint(coords, type);
+    state2.pointHopper[pt.properties.key] = pt;
+    state2.destination = coords;
+    pickups.features.push(pt);
+
+    state2.pingMarker
+        .setLngLat(pt.geometry.coordinates)
+
+    d3.select('.ping')
+        .classed('active', true)
+
+    console.log(assembleQueryURL(state2));
+
+    d3.json(assembleQueryURL(state2), function(err, resp){
+
+        state2.currentRoute = resp.trips[0];
+        state2.pause = false;
+
+        // draw the line except the last step (no need for round trip)
+        var lastStep = resp.trips[0].legs[resp.trips[0].legs.length-1].steps[0].intersections[0].location
+        var slicedLine = turf.lineSlice(
+            turf.point(state2.currentRoute.geometry.coordinates[0]),
+            lastStep, 
+            state2.currentRoute.geometry
+        )
+
+        state2.currentRoute.geometry = slicedLine;
+
+        state2.lastQueryTime = Date.now();
+        var timeSoFar = Date.now();
+
+        state2.currentSchedule = [];
+
+        for(var i =1; i<resp.waypoints.length; i++){
+
+            var legTime = resp.trips[0].legs[i].duration;
+            timeSoFar += legTime*1000/state2.speedFactor;
+
+
+            // snap pickups to the road grid, and edit entries accordingly
+            state2.keepTrack[i].geometry.coordinates = resp.waypoints[i].location;
+
+            var waypointIndex = resp.waypoints[i]['waypoint_index'];
+            state2.currentSchedule[waypointIndex] = state2.keepTrack[i];
+
+        }
+
+        state2.currentSchedule.shift();
+
+        state2.updatePickups(
+            turf.featureCollection(
+                state2.currentSchedule.map(
+                    function(ft, index){
+                        ft.properties.index = index;
+                        return ft
+                    }
+                )
+            )
+        )
+        var nextDestination = state2.pointHopper[state2.currentSchedule[0].properties.key];
+        nextDestination.properties.restaurant = !nextDestination.properties.orderTime
+
+        tick2();
+        state2.updateQueue();
+        state2.updateRoute(slicedLine); 
+
+    })
+}
+
+state3.newPickup = function (coords, type){
+
+    //state.pingMarker._element.classList ='ping mapboxgl-marker';
+
+    d3.select('.ping')
+        .classed('active', false)
+    var pt = addPoint(coords, type);
+    state3.pointHopper[pt.properties.key] = pt;
+    state3.destination = coords;
+    pickups.features.push(pt);
+
+    state3.pingMarker
+        .setLngLat(pt.geometry.coordinates)
+
+    d3.select('.ping')
+        .classed('active', true)
+
+    console.log(assembleQueryURL(state3));
+
+    d3.json(assembleQueryURL(state3), function(err, resp){
+
+        state3.currentRoute = resp.trips[0];
+        state3.pause = false;
+
+        // draw the line except the last step (no need for round trip)
+        var lastStep = resp.trips[0].legs[resp.trips[0].legs.length-1].steps[0].intersections[0].location
+        var slicedLine = turf.lineSlice(
+            turf.point(state3.currentRoute.geometry.coordinates[0]),
+            lastStep, 
+            state3.currentRoute.geometry
+        )
+
+        state3.currentRoute.geometry = slicedLine;
+
+        state3.lastQueryTime = Date.now();
+        var timeSoFar = Date.now();
+
+        state3.currentSchedule = [];
+
+        for(var i =1; i<resp.waypoints.length; i++){
+
+            var legTime = resp.trips[0].legs[i].duration;
+            timeSoFar += legTime*1000/state3.speedFactor;
+
+
+            // snap pickups to the road grid, and edit entries accordingly
+            state3.keepTrack[i].geometry.coordinates = resp.waypoints[i].location;
+
+            var waypointIndex = resp.waypoints[i]['waypoint_index'];
+            state3.currentSchedule[waypointIndex] = state3.keepTrack[i];
+
+        }
+
+        state3.currentSchedule.shift();
+
+        state3.updatePickups(
+            turf.featureCollection(
+                state3.currentSchedule.map(
+                    function(ft, index){
+                        ft.properties.index = index;
+                        return ft
+                    }
+                )
+            )
+        )
+        var nextDestination = state3.pointHopper[state3.currentSchedule[0].properties.key];
+        nextDestination.properties.restaurant = !nextDestination.properties.orderTime
+
+        tick3();
+        state3.updateQueue();
+        state3.updateRoute(slicedLine); 
+
+    })
+}
+
+
 function addPoint(coords, type){
 
     var point = turf.point(
@@ -955,23 +1608,66 @@ function addPoint(coords, type){
 
 function tick(){
     if (!state.pause){
-        moveTruck()
+        moveTruck(state, 1)
         requestAnimationFrame(tick)
     }
 }
 
-function moveTruck(){
+function tick2(){
+    if (!state2.pause){
+        moveTruck(state2, 2)
+        requestAnimationFrame(tick2)
+    }
+}
+
+function tick3(){
+    if (!state3.pause){
+        moveTruck(state3, 3)
+        requestAnimationFrame(tick3)
+    }
+}
+
+function moveTruck(state, i){
 
     // update truck position
-    var timeElapsed = (Date.now()-state.lastQueryTime)/(1000/state.speedFactor);
+    
+    var timeElapsed = 0;
+    if (state.checkin){
+        timeElapsed = (Date.now() - state.checkindiff - state.lastQueryTime)/(1000/state.speedFactor);
+    } else {
+        timeElapsed = (Date.now()-state.lastQueryTime)/(1000/state.speedFactor);
+    }
     var timeRatio = timeElapsed/state.currentRoute.duration
     var progressDistance = state.currentRoute.distance * timeRatio;
     var newSpot = state.ruler.along(state.currentRoute.geometry.geometry.coordinates, progressDistance);
     var bearing = state.ruler.bearing(state.truckLocation, newSpot)
+
+    // console.log(state.destination);
+    var t = JSON.stringify({ data: {locations: [{latitude: newSpot[1], longitude: newSpot[0]},{latitude: state.destination.lat, longitude: state.destination.lng}]}});
+    
+    var xmlhttp = new XMLHttpRequest(); 
+    xmlhttp.open("POST", "http://localhost:8000/geo");
+    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    var result = xmlhttp.send(t);
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == XMLHttpRequest.DONE) {
+            state.distanceLeft = parseFloat(JSON.parse(xmlhttp.responseText).distance);
+        }
+    }
+
+    // console.log(state.distanceLeft);
+
+    if (state.distanceLeft < 500 && !state.checkin) {
+        state.pause = true;
+        var button = document.getElementById("b"+i);
+        button.style.display = "inline";
+        state.checkintime = Date.now();
+    }
+
+    var fieldNameElement = document.getElementById("m"+i);
+    fieldNameElement.innerHTML = state.distanceLeft;
+
     state.truckLocation = newSpot;
-
-    console.log(newSpot);
-
     state.truckMarker
         .setLngLat(state.truckLocation);
 
@@ -1047,8 +1743,7 @@ function moveTruck(){
 }
 
 
-
-function assembleQueryURL(){
+function assembleQueryURL(state){
 
     var coordinates = [state.truckLocation];
     var distributions = [];
@@ -1101,6 +1796,32 @@ function objectToArray(obj){
     })
 
     return payload
+}
+
+function memberContinue(num) {
+    switch(num){
+        case 1: {
+            state.pause = false;
+            state.checkin = true;
+            state.checkindiff = Date.now() - state.checkintime;
+            tick();
+            break;
+        }
+        case 2: {
+            state2.pause = false;
+            state2.checkin = true;
+            state2.checkindiff = Date.now() - state2.checkintime;
+            tick2();
+            break;
+        }
+        case 3: {
+            state3.pause = false;
+            state3.checkin = true;
+            state3.checkindiff = Date.now() - state3.checkintime;
+            tick3();
+            break;
+        }
+    }    
 }
 
 window.addEventListener('blur', function(){state.reset()})
